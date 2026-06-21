@@ -1,19 +1,13 @@
 const { body, validationResult } = require('express-validator');
 
 const validateRegister = [
-  body('name').trim().notEmpty().withMessage('Nome obrigatório').escape(),
+  body('nome').trim().notEmpty().withMessage('Nome obrigatório').escape(),
   body('email').isEmail().withMessage('Email inválido').normalizeEmail(),
-  body('password').isLength({ min: 6 }).withMessage('Senha deve ter 6+ caracteres').trim()
+  body('password').isLength({ min: 6 }).withMessage('Senha deve ter pelo menos 6 caracteres')
 ];
 
-const validatePost = [
-  body('title').trim().notEmpty().withMessage('Título obrigatório').escape(),
-  body('content').trim().notEmpty().withMessage('Conteúdo obrigatório').escape(),
-  body('imageUrl').optional().isURL().withMessage('URL de imagem inválida')
-];
-
-const validateComment = [
-  body('text').trim().notEmpty().withMessage('Comentário vazio').escape()
+const validateCategoria = [
+  body('nome').trim().notEmpty().withMessage('Nome da categoria é obrigatório').escape()
 ];
 
 const handleErrors = (req, res, next) => {
@@ -21,7 +15,7 @@ const handleErrors = (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  next();   // ← ESSENCIAL para continuar para o controller
+  next();
 };
 
-module.exports = { validateRegister, validatePost, validateComment, handleErrors };
+module.exports = { validateRegister, validateCategoria, handleErrors };
