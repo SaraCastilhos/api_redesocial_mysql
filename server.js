@@ -1,17 +1,17 @@
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
-const connectDB = require('./src/config/db');
+
+const pool = require('./src/config/database');
+const { criarTabelaUsuarios } = require('./src/models/usuarioModel');
+
 const authRoutes = require('./src/routes/authRoutes');
-const postRoutes = require('./src/routes/postRoutes');
+const categoriaRoutes = require('./src/routes/categoriaRoutes');
+const apiRoutes = require('./src/routes/apiRoutes');
 
 // Swagger
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger-output.json');
-
-// Conectar ao MongoDB
-console.log('MONGODB_URI:', process.env.MONGODB_URI);
-connectDB();
 
 const app = express();
 
@@ -34,11 +34,25 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile, {
 }));
 
 // Rotas da API
+
+// Rota pública de status
+app.use('/api', apiRoutes);
+
+// Rotas de autenticação (públicas)
 app.use('/api/auth', authRoutes);
-app.use('/api/posts', postRoutes);
+
+// Rotas protegidas de categorias
+app.use('/api/categorias', categoriaRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-  console.log(`Documentação disponível em http://localhost:${PORT}/api-docs`);
-});
+
+(async () => {
+  await pool.testConnection();        // testa a conexão MySQL antes de subir o servidor
+  await criarTabelaUsuarios();        // garante que a tabela usuarios existe no banco loja
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📚 Swagger: http://localhost:${PORT}/api-docs`);
+    console.log(`🟢 Status:  http://localhost:${PORT}/api/status`);
+  });
+})();
