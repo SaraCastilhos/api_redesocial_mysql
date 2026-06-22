@@ -1,386 +1,491 @@
 {
-  "swagger": "2.0",
+  "openapi": "3.0.0",
   "info": {
-    "title": "API Rede Social",
-    "description": "API REST para uma rede social com postagens, comentários, curtidas e autenticação JWT.",
-    "version": "1.0.0",
+    "title": "API Rede Social v2 – MySQL",
+    "description": "API REST migrada para banco relacional MySQL. Inclui autenticação JWT, rota pública de status e CRUD protegido de Categorias.",
+    "version": "2.0.0",
     "contact": {
       "name": "Sara Amabili Castilhos"
     }
   },
-  "host": "localhost:3000",
-  "basePath": "/",
-  "schemes": ["http"],
-  "securityDefinitions": {
-    "bearerAuth": {
-      "type": "apiKey",
-      "in": "header",
-      "name": "Authorization",
-      "description": "Insira o token JWT no formato: Bearer <token>"
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido em /api/auth/login. Cole aqui apenas o token (sem a palavra Bearer)."
+      }
+    },
+    "schemas": {
+      "RegisterBody": {
+        "type": "object",
+        "required": [
+          "nome",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Sara Castilhos"
+          },
+          "email": {
+            "type": "string",
+            "example": "sara@email.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "senha123"
+          }
+        }
+      },
+      "LoginBody": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "sara@email.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "senha123"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "id_usuario": {
+            "type": "integer",
+            "example": 1
+          },
+          "nome": {
+            "type": "string",
+            "example": "Sara Castilhos"
+          },
+          "email": {
+            "type": "string",
+            "example": "sara@email.com"
+          },
+          "token": {
+            "type": "string",
+            "example": "eyJhbGci..."
+          }
+        }
+      },
+      "CategoriaBody": {
+        "type": "object",
+        "required": [
+          "nome"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Eletrônicos"
+          }
+        }
+      },
+      "Categoria": {
+        "type": "object",
+        "properties": {
+          "id_categoria": {
+            "type": "integer",
+            "example": 1
+          },
+          "nome": {
+            "type": "string",
+            "example": "Eletrônicos"
+          }
+        }
+      },
+      "StatusResponse": {
+        "type": "object",
+        "properties": {
+          "versao": {
+            "type": "string",
+            "example": "2.0.0"
+          },
+          "status": {
+            "type": "string",
+            "example": "online"
+          },
+          "banco": {
+            "type": "string",
+            "example": "MySQL"
+          },
+          "descricao": {
+            "type": "string",
+            "example": "API Rede Social – migrada para banco relacional"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "example": "Mensagem de erro"
+          }
+        }
+      }
     }
   },
   "tags": [
-    { "name": "Autenticação", "description": "Registro e login de usuários" },
-    { "name": "Postagens", "description": "CRUD de postagens (requer token Bearer)" },
-    { "name": "Curtidas", "description": "Curtir e descurtir postagens (requer token Bearer)" },
-    { "name": "Comentários", "description": "Gerenciar comentários em postagens (requer token Bearer)" }
+    {
+      "name": "Status",
+      "description": "Rota pública de monitoramento – não requer autenticação"
+    },
+    {
+      "name": "Autenticação",
+      "description": "Registro e login de usuários"
+    },
+    {
+      "name": "Categorias",
+      "description": "CRUD de categorias – requer **dois** controles de acesso:\n\n1. Header `Authorization: Bearer <token>` obtido no login.\n2. Header `x-user-id` com o `id_usuario` retornado no login (deve coincidir com o token).\n\nSem ambos os headers, a requisição é bloqueada com 401 ou 403."
+    }
   ],
   "paths": {
+    "/api/status": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Verificar status e versão da API (público – sem autenticação)",
+        "responses": {
+          "200": {
+            "description": "API online",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/register": {
       "post": {
-        "tags": ["Autenticação"],
-        "summary": "Registrar um novo usuário",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": { "$ref": "#/definitions/RegisterBody" }
-          }
+        "tags": [
+          "Autenticação"
         ],
+        "summary": "Registrar novo usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterBody"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
-            "description": "Usuário criado com sucesso",
-            "schema": { "$ref": "#/definitions/AuthResponse" }
+            "description": "Usuário criado com sucesso – guarde o token e o id_usuario para usar nas rotas de Categorias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
           },
           "400": {
-            "description": "E-mail já cadastrado ou dados inválidos",
-            "schema": { "$ref": "#/definitions/ErrorResponse" }
-          },
-          "500": { "description": "Erro interno do servidor" }
+            "description": "E-mail já cadastrado ou dados inválidos"
+          }
         }
       }
     },
     "/api/auth/login": {
       "post": {
-        "tags": ["Autenticação"],
-        "summary": "Login de usuário existente",
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Login – retorna token JWT e id_usuario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login realizado – copie o token para o botão Authorize e o id_usuario para o header x-user-id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas"
+          }
+        }
+      }
+    },
+    "/api/categorias": {
+      "get": {
+        "tags": [
+          "Categorias"
+        ],
+        "summary": "Listar todas as categorias",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
-            "in": "body",
-            "name": "body",
+            "in": "header",
+            "name": "x-user-id",
             "required": true,
-            "schema": { "$ref": "#/definitions/LoginBody" }
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID do usuário autenticado (id_usuario retornado no login)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Login realizado – retorna token JWT",
-            "schema": { "$ref": "#/definitions/AuthResponse" }
+            "description": "Lista de categorias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Categoria"
+                  }
+                }
+              }
+            }
           },
           "401": {
-            "description": "Credenciais inválidas",
-            "schema": { "$ref": "#/definitions/ErrorResponse" }
+            "description": "Token ausente ou x-user-id não informado"
           },
-          "500": { "description": "Erro interno do servidor" }
-        }
-      }
-    },
-    "/api/posts": {
-      "get": {
-        "tags": ["Postagens"],
-        "summary": "Listar todas as postagens",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "Lista de postagens com autores e comentários",
-            "schema": { "type": "array", "items": { "$ref": "#/definitions/Post" } }
-          },
-          "401": { "description": "Token não fornecido ou inválido" },
-          "500": { "description": "Erro interno do servidor" }
+          "403": {
+            "description": "x-user-id não corresponde ao token"
+          }
         }
       },
       "post": {
-        "tags": ["Postagens"],
-        "summary": "Criar uma nova postagem",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
+        "tags": [
+          "Categorias"
+        ],
+        "summary": "Criar nova categoria",
+        "security": [
           {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": { "$ref": "#/definitions/PostBody" }
+            "bearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-user-id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID do usuário autenticado"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoriaBody"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
-            "description": "Postagem criada com sucesso",
-            "schema": { "$ref": "#/definitions/Post" }
+            "description": "Categoria criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Categoria"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Dados inválidos",
-            "schema": { "$ref": "#/definitions/ErrorResponse" }
+            "description": "Dados inválidos (nome vazio)"
           },
-          "401": { "description": "Token não fornecido ou inválido" }
+          "401": {
+            "description": "Não autorizado"
+          }
         }
       }
     },
-    "/api/posts/{id}": {
+    "/api/categorias/{id}": {
       "get": {
-        "tags": ["Postagens"],
-        "summary": "Buscar uma postagem por ID",
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Categorias"
+        ],
+        "summary": "Buscar categoria por ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
             "name": "id",
             "required": true,
-            "type": "string",
-            "description": "ID da postagem (MongoDB ObjectId)"
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID da categoria"
+          },
+          {
+            "in": "header",
+            "name": "x-user-id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID do usuário autenticado"
           }
         ],
         "responses": {
           "200": {
-            "description": "Postagem encontrada",
-            "schema": { "$ref": "#/definitions/Post" }
+            "description": "Categoria encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Categoria"
+                }
+              }
+            }
           },
-          "401": { "description": "Token não fornecido ou inválido" },
-          "404": { "description": "Post não encontrado" },
-          "500": { "description": "Erro interno do servidor" }
+          "401": {
+            "description": "Não autorizado"
+          },
+          "404": {
+            "description": "Categoria não encontrada"
+          }
         }
       },
       "put": {
-        "tags": ["Postagens"],
-        "summary": "Atualizar uma postagem (somente o autor)",
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Categorias"
+        ],
+        "summary": "Atualizar categoria",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
             "name": "id",
             "required": true,
-            "type": "string",
-            "description": "ID da postagem"
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID da categoria"
           },
           {
-            "in": "body",
-            "name": "body",
+            "in": "header",
+            "name": "x-user-id",
             "required": true,
-            "schema": { "$ref": "#/definitions/PostBody" }
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID do usuário autenticado"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoriaBody"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Postagem atualizada com sucesso",
-            "schema": { "$ref": "#/definitions/Post" }
+            "description": "Categoria atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Categoria"
+                }
+              }
+            }
           },
-          "400": { "description": "Dados inválidos" },
-          "401": { "description": "Token não fornecido ou inválido" },
-          "403": { "description": "Você só pode editar seus próprios posts" },
-          "404": { "description": "Post não encontrado" }
+          "401": {
+            "description": "Não autorizado"
+          },
+          "404": {
+            "description": "Categoria não encontrada"
+          }
         }
       },
       "delete": {
-        "tags": ["Postagens"],
-        "summary": "Remover uma postagem (somente o autor)",
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Categorias"
+        ],
+        "summary": "Remover categoria",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
             "name": "id",
             "required": true,
-            "type": "string",
-            "description": "ID da postagem"
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID da categoria"
+          },
+          {
+            "in": "header",
+            "name": "x-user-id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID do usuário autenticado"
           }
         ],
         "responses": {
           "200": {
-            "description": "Post removido com sucesso",
-            "schema": { "$ref": "#/definitions/MessageResponse" }
+            "description": "Categoria removida com sucesso"
           },
-          "401": { "description": "Token não fornecido ou inválido" },
-          "403": { "description": "Você só pode deletar seus próprios posts" },
-          "404": { "description": "Post não encontrado" },
-          "500": { "description": "Erro interno do servidor" }
+          "401": {
+            "description": "Não autorizado"
+          },
+          "404": {
+            "description": "Categoria não encontrada"
+          }
         }
-      }
-    },
-    "/api/posts/{id}/like": {
-      "post": {
-        "tags": ["Curtidas"],
-        "summary": "Curtir ou descurtir uma postagem",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "type": "string",
-            "description": "ID da postagem"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Operação de curtida realizada",
-            "schema": { "$ref": "#/definitions/LikeResponse" }
-          },
-          "401": { "description": "Token não fornecido ou inválido" },
-          "404": { "description": "Post não encontrado" },
-          "500": { "description": "Erro interno do servidor" }
-        }
-      }
-    },
-    "/api/posts/{id}/comments": {
-      "post": {
-        "tags": ["Comentários"],
-        "summary": "Adicionar um comentário a uma postagem",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "type": "string",
-            "description": "ID da postagem"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": { "$ref": "#/definitions/CommentBody" }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Comentário adicionado com sucesso",
-            "schema": { "$ref": "#/definitions/Comment" }
-          },
-          "400": { "description": "Dados inválidos (comentário vazio)" },
-          "401": { "description": "Token não fornecido ou inválido" },
-          "404": { "description": "Post não encontrado" }
-        }
-      }
-    },
-    "/api/posts/{postId}/comments/{commentId}": {
-      "delete": {
-        "tags": ["Comentários"],
-        "summary": "Remover um comentário (autor do comentário ou dono do post)",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "postId",
-            "required": true,
-            "type": "string",
-            "description": "ID da postagem"
-          },
-          {
-            "in": "path",
-            "name": "commentId",
-            "required": true,
-            "type": "string",
-            "description": "ID do comentário"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Comentário removido",
-            "schema": { "$ref": "#/definitions/MessageResponse" }
-          },
-          "401": { "description": "Token não fornecido ou inválido" },
-          "403": { "description": "Não autorizado" },
-          "404": { "description": "Post ou comentário não encontrado" },
-          "500": { "description": "Erro interno do servidor" }
-        }
-      }
-    }
-  },
-  "definitions": {
-    "RegisterBody": {
-      "type": "object",
-      "required": ["name", "email", "password"],
-      "properties": {
-        "name": { "type": "string", "example": "Sara Castilhos" },
-        "email": { "type": "string", "example": "sara@email.com" },
-        "password": { "type": "string", "example": "senha123" }
-      }
-    },
-    "LoginBody": {
-      "type": "object",
-      "required": ["email", "password"],
-      "properties": {
-        "email": { "type": "string", "example": "sara@email.com" },
-        "password": { "type": "string", "example": "senha123" }
-      }
-    },
-    "AuthResponse": {
-      "type": "object",
-      "properties": {
-        "_id": { "type": "string", "example": "64f1a2b3c4d5e6f7a8b9c0d1" },
-        "name": { "type": "string", "example": "Sara Castilhos" },
-        "email": { "type": "string", "example": "sara@email.com" },
-        "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
-      }
-    },
-    "PostBody": {
-      "type": "object",
-      "required": ["title", "content"],
-      "properties": {
-        "title": { "type": "string", "example": "Meu primeiro post" },
-        "content": { "type": "string", "example": "Conteúdo do post aqui." },
-        "imageUrl": { "type": "string", "example": "https://exemplo.com/imagem.jpg" }
-      }
-    },
-    "Post": {
-      "type": "object",
-      "properties": {
-        "_id": { "type": "string", "example": "64f1a2b3c4d5e6f7a8b9c0d2" },
-        "title": { "type": "string", "example": "Meu primeiro post" },
-        "content": { "type": "string", "example": "Conteúdo do post aqui." },
-        "imageUrl": { "type": "string", "example": "https://exemplo.com/imagem.jpg" },
-        "author": {
-          "type": "object",
-          "properties": {
-            "_id": { "type": "string" },
-            "name": { "type": "string" },
-            "email": { "type": "string" }
-          }
-        },
-        "likes": { "type": "array", "items": { "type": "string" } },
-        "comments": { "type": "array", "items": { "$ref": "#/definitions/Comment" } },
-        "createdAt": { "type": "string", "example": "2024-01-01T00:00:00.000Z" },
-        "updatedAt": { "type": "string", "example": "2024-01-01T00:00:00.000Z" }
-      }
-    },
-    "CommentBody": {
-      "type": "object",
-      "required": ["text"],
-      "properties": {
-        "text": { "type": "string", "example": "Que post incrível!" }
-      }
-    },
-    "Comment": {
-      "type": "object",
-      "properties": {
-        "_id": { "type": "string", "example": "64f1a2b3c4d5e6f7a8b9c0d3" },
-        "text": { "type": "string", "example": "Que post incrível!" },
-        "author": {
-          "type": "object",
-          "properties": {
-            "_id": { "type": "string" },
-            "name": { "type": "string" },
-            "email": { "type": "string" }
-          }
-        },
-        "createdAt": { "type": "string", "example": "2024-01-01T00:00:00.000Z" }
-      }
-    },
-    "LikeResponse": {
-      "type": "object",
-      "properties": {
-        "likesCount": { "type": "integer", "example": 5 },
-        "liked": { "type": "boolean", "example": true }
-      }
-    },
-    "ErrorResponse": {
-      "type": "object",
-      "properties": {
-        "error": { "type": "string", "example": "Mensagem de erro" }
-      }
-    },
-    "MessageResponse": {
-      "type": "object",
-      "properties": {
-        "msg": { "type": "string", "example": "Operação realizada com sucesso" }
       }
     }
   }
