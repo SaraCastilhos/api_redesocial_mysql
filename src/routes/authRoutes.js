@@ -21,20 +21,16 @@ const { validateRegister, handleErrors } = require('../middlewares/sanitize');
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/definitions/RegisterBody'
+ *             $ref: '#/components/schemas/RegisterBody'
  *     responses:
  *       201:
- *         description: Usuário criado com sucesso
+ *         description: Usuário criado com sucesso – guarde o token e o id_usuario para usar nas rotas de Categorias
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/definitions/AuthResponse'
+ *               $ref: '#/components/schemas/AuthResponse'
  *       400:
  *         description: E-mail já cadastrado ou dados inválidos
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/definitions/ErrorResponse'
  *       500:
  *         description: Erro interno do servidor
  */
@@ -44,27 +40,23 @@ router.post('/register', validateRegister, handleErrors, register);
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Login de usuário existente
+ *     summary: Login de usuário existente – retorna token JWT e id_usuario
  *     tags: [Autenticação]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/definitions/LoginBody'
+ *             $ref: '#/components/schemas/LoginBody'
  *     responses:
  *       200:
- *         description: Login realizado com sucesso – retorna token JWT
+ *         description: Login realizado com sucesso – copie o token para o botão Authorize e o id_usuario para o header x-user-id
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/definitions/AuthResponse'
+ *               $ref: '#/components/schemas/AuthResponse'
  *       401:
  *         description: Credenciais inválidas
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/definitions/ErrorResponse'
  *       500:
  *         description: Erro interno do servidor
  */
