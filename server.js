@@ -5,26 +5,23 @@ const helmet = require('helmet');
 const pool = require('./src/config/database');
 const { criarTabelaUsuarios } = require('./src/models/usuarioModel');
 
-const authRoutes = require('./src/routes/authRoutes');
+const authRoutes      = require('./src/routes/authRoutes');
 const categoriaRoutes = require('./src/routes/categoriaRoutes');
-const apiRoutes = require('./src/routes/apiRoutes');
+const clientesRoutes  = require('./src/routes/clientesRoutes');
+const produtosRoutes  = require('./src/routes/produtosRoutes');
+const pedidosRoutes   = require('./src/routes/pedidosRoutes');
+const apiRoutes       = require('./src/routes/apiRoutes');
 
 // Swagger
-const swaggerUi = require('swagger-ui-express');
+const swaggerUi   = require('swagger-ui-express');
 const swaggerFile = require('./swagger-output.json');
 
 const app = express();
 
-// Helmet com ajuste para permitir o Swagger UI carregar seus assets inline
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-  })
-);
-
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 
-// Rota de documentação Swagger (pública)
+// Documentação Swagger (pública)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile, {
   customCss: `
     .swagger-ui .topbar { background-color: #1a1a2e; }
@@ -33,22 +30,19 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile, {
   customSiteTitle: 'API Rede Social – Docs'
 }));
 
-// Rotas da API
-
-// Rota pública de status
-app.use('/api', apiRoutes);
-
-// Rotas de autenticação (públicas)
-app.use('/api/auth', authRoutes);
-
-// Rotas protegidas de categorias
-app.use('/api/categorias', categoriaRoutes);
+// Rotas
+app.use('/api',           apiRoutes);       // GET /api/status (público)
+app.use('/api/auth',      authRoutes);      // POST /api/auth/register e /login
+app.use('/api/categorias', categoriaRoutes); // CRUD categorias (protegido)
+app.use('/api/clientes',  clientesRoutes);  // CRUD clientes   (protegido)
+app.use('/api/produtos',  produtosRoutes);  // CRUD produtos   (protegido)
+app.use('/api/pedidos',   pedidosRoutes);   // CRUD pedidos    (protegido)
 
 const PORT = process.env.PORT || 3000;
 
 (async () => {
-  await pool.testConnection();        // testa a conexão MySQL antes de subir o servidor
-  await criarTabelaUsuarios();        // garante que a tabela usuarios existe no banco loja
+  await pool.testConnection();
+  await criarTabelaUsuarios();
 
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
