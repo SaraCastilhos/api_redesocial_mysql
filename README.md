@@ -1,11 +1,10 @@
-# 📱 Rede Social API v2 – Migração para MySQL
+# 📱 Rede Social API v2 – MySQL
 
-![GitHub repo size](https://img.shields.io/github/repo-size/SaraCastilhos/api_redesocial_mysql)
 ![Node Version](https://img.shields.io/badge/node-%3E%3D18-blue)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?logo=JSON%20web%20tokens)
 
-API RESTful migrada de NoSQL (MongoDB) para banco de dados relacional **MySQL**, desenvolvida como trabalho acadêmico. Esta versão implementa autenticação stateless via JWT adaptada para MySQL, rota pública de monitoramento e CRUD completo de Categorias com dupla camada de proteção.
+API RESTful migrada de NoSQL (MongoDB) para banco de dados relacional **MySQL**, desenvolvida como trabalho acadêmico. Implementa autenticação JWT, rota pública de monitoramento e CRUD completo de Categorias, Clientes, Produtos e Pedidos — todos com dupla camada de proteção.
 
 > **Versão anterior (MongoDB):** [`api_redesocial`](https://github.com/SaraCastilhos/api_redesocial)
 
@@ -17,253 +16,252 @@ API RESTful migrada de NoSQL (MongoDB) para banco de dados relacional **MySQL**,
 |---|---|
 | **Runtime** | Node.js (≥ 18) |
 | **Framework** | Express |
-| **Banco de Dados** | MySQL 8 + mysql2 (driver com Promises) |
-| **Autenticação** | JWT (jsonwebtoken) + bcrypt (hash de senhas) |
+| **Banco de Dados** | MySQL 8 + mysql2/promise (pool de conexões) |
+| **Autenticação** | JWT (jsonwebtoken) + bcrypt |
 | **Segurança** | Helmet, express-validator, Prepared Statements |
 | **Documentação** | Swagger UI (OpenAPI 3.0) |
 | **Dev Tools** | Nodemon, GitFlow |
 
 ---
 
-## ✨ Funcionalidades desta versão
+## ✨ Funcionalidades
 
 ### 🔓 Rota Pública
-- [x] `GET /api/status` — retorna versão e status da API sem necessidade de autenticação
+- [x] `GET /api/status` — versão e status da API, sem autenticação
 
-### 👥 Autenticação (MySQL)
-- [x] Registro de usuários com hash bcrypt (tabela `usuarios` no banco `loja`)
-- [x] Login com geração de token JWT (válido por 7 dias)
-- [x] Proteção de rotas via middleware `auth.js`
+### 👥 Autenticação
+- [x] Registro de usuários com hash bcrypt
+- [x] Login com geração de token JWT (7 dias)
 
-### 🗂️ Categorias (CRUD protegido)
-- [x] Listar todas as categorias
-- [x] Buscar categoria por ID
-- [x] Criar categoria
-- [x] Atualizar categoria
-- [x] Remover categoria
+### 🗂️ Categorias · Clientes · Produtos · Pedidos (CRUD protegido)
+- [x] Listar todos os registros
+- [x] Buscar por ID
+- [x] Criar
+- [x] Atualizar
+- [x] Remover
 
-> Todas as rotas de Categorias exigem **dois** controles de acesso simultâneos:
-> 1. Header `Authorization: Bearer <token>` — obtido no login
-> 2. Header `x-user-id` — ID do usuário, deve coincidir com o token
+> ⚠️ Todas as rotas de CRUD exigem **dois** controles simultâneos:
+> 1. `Authorization: Bearer <token>` — obtido no login
+> 2. `x-user-id: <id_usuario>` — deve coincidir com o token
 
-### 🔒 Segurança e Boas Práticas
-- [x] Senhas criptografadas com bcrypt (hash + salt)
-- [x] **Prepared Statements** em 100% das queries SQL (previne SQL Injection)
-- [x] Validação e sanitização de entradas (previne XSS)
-- [x] Proteção de headers HTTP com Helmet
-- [x] Variáveis de ambiente via `dotenv`
-- [x] Arquitetura MVC
+### 🔒 Segurança
+- [x] Prepared Statements em 100% das queries (previne SQL Injection)
+- [x] Senhas hasheadas com bcrypt
+- [x] Validação de entradas com express-validator
+- [x] Helmet (proteção de headers HTTP)
+- [x] Transações SQL em pedidos (garante integridade dos itens)
 
 ---
 
-## 📦 Como Executar o Projeto
+## 📦 Como Executar
 
-### 📋 Pré-requisitos
+### Pré-requisitos
+- [Node.js](https://nodejs.org/) ≥ 18
+- [MySQL](https://www.mysql.com/) 8.0
 
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/) (versão 18 ou superior)
-- [MySQL](https://www.mysql.com/) 8.0 (local) ou MySQL Workbench
+### Instalação
 
-### 🔧 Instalação
-
-**1. Clone o repositório**
 ```bash
 git clone https://github.com/SaraCastilhos/api_redesocial_mysql.git
 cd api_redesocial_mysql
-git checkout feature/migracao-mysql
-```
-
-**2. Instale as dependências**
-```bash
+git checkout feature/crud-clientes-produtos-pedidos
 npm install
 ```
 
-**3. Configure o banco de dados**
+### Banco de dados
 
-Abra o MySQL Workbench e execute o arquivo `database.sql` (na raiz do projeto). Ele cria o banco `loja` com todas as tabelas necessárias, incluindo a tabela `usuarios` para autenticação.
-
+Execute o `database.sql` no MySQL Workbench (ou via terminal):
 ```bash
-# Ou via terminal:
 mysql -u root -p < database.sql
 ```
 
-**4. Configure as variáveis de ambiente**
+### Variáveis de ambiente
+
 ```bash
 cp .env.example .env
 ```
 
-Edite o `.env` com suas credenciais reais:
+Edite o `.env`:
 ```env
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD="sua_senha_aqui"
+DB_PASSWORD="sua_senha"
 DB_NAME=loja
 DB_PORT=3306
-
-JWT_SECRET=uma_chave_super_secreta_e_longa
+JWT_SECRET=chave_super_secreta
 PORT=3000
 ```
 
-> ⚠️ Se sua senha contiver `#`, envolva o valor entre aspas duplas: `DB_PASSWORD="#suaSenha"`. O caractere `#` é interpretado como comentário em arquivos `.env` sem aspas.
+> ⚠️ Se sua senha tiver `#`, envolva em aspas duplas: `DB_PASSWORD="#senha"`
 
-**5. Inicie o servidor**
+### Iniciar
+
 ```bash
 npm run dev
 ```
 
-No terminal você verá:
 ```
 ✅ MySQL conectado com sucesso
 🚀 Servidor rodando na porta 3000
 📚 Swagger: http://localhost:3000/api-docs
-🟢 Status:  http://localhost:3000/api/status
 ```
 
 ---
 
-## 🔑 Variáveis de Ambiente
+## 📌 Endpoints
 
-| Variável | Descrição | Exemplo |
-|---|---|---|
-| `DB_HOST` | Host do MySQL | `localhost` |
-| `DB_USER` | Usuário do MySQL | `root` |
-| `DB_PASSWORD` | Senha do MySQL (use aspas se tiver `#`) | `"#minhaSenha"` |
-| `DB_NAME` | Nome do banco de dados | `loja` |
-| `DB_PORT` | Porta do MySQL | `3306` |
-| `JWT_SECRET` | Chave secreta para assinar tokens JWT | `chave_longa_e_aleatoria` |
-| `PORT` | Porta do servidor Node | `3000` |
-
-> ⚠️ **Nunca versione o `.env`**. Ele está no `.gitignore`.
-
----
-
-## 📌 Endpoints da API
-
-### 🔓 Status (público)
+### 🔓 Público
 
 | Método | Rota | Descrição |
 |---|---|---|
-| GET | `/api/status` | Retorna versão e status da API |
+| GET | `/api/status` | Status e versão da API |
 
-### 🔓 Autenticação (públicos)
+### 🔓 Autenticação
 
-| Método | Rota | Descrição | Body |
-|---|---|---|---|
-| POST | `/api/auth/register` | Registrar novo usuário | `{ "nome", "email", "password" }` |
-| POST | `/api/auth/login` | Login — retorna token e id_usuario | `{ "email", "password" }` |
+| Método | Rota | Body |
+|---|---|---|
+| POST | `/api/auth/register` | `{ nome, email, password }` |
+| POST | `/api/auth/login` | `{ email, password }` |
 
-### 🔒 Categorias (requer token Bearer + header x-user-id)
+### 🔒 Categorias · Clientes · Produtos · Pedidos
+
+Todas as rotas abaixo exigem os headers:
+```
+Authorization: Bearer <token>
+x-user-id: <id_usuario>
+```
 
 | Método | Rota | Descrição |
 |---|---|---|
-| GET | `/api/categorias` | Listar todas as categorias |
-| GET | `/api/categorias/:id` | Buscar categoria por ID |
-| POST | `/api/categorias` | Criar nova categoria |
-| PUT | `/api/categorias/:id` | Atualizar categoria |
-| DELETE | `/api/categorias/:id` | Remover categoria |
-
-> **Como autenticar nas rotas de Categorias:**
-> ```
-> Authorization: Bearer <token_obtido_no_login>
-> x-user-id: <id_usuario_obtido_no_login>
-> ```
+| GET | `/api/categorias` | Listar categorias |
+| GET | `/api/categorias/:id` | Buscar por ID |
+| POST | `/api/categorias` | Criar |
+| PUT | `/api/categorias/:id` | Atualizar |
+| DELETE | `/api/categorias/:id` | Remover |
+| GET | `/api/clientes` | Listar clientes |
+| GET | `/api/clientes/:id` | Buscar por ID |
+| POST | `/api/clientes` | Criar |
+| PUT | `/api/clientes/:id` | Atualizar |
+| DELETE | `/api/clientes/:id` | Remover |
+| GET | `/api/produtos` | Listar produtos (com nome da categoria) |
+| GET | `/api/produtos/:id` | Buscar por ID |
+| POST | `/api/produtos` | Criar |
+| PUT | `/api/produtos/:id` | Atualizar |
+| DELETE | `/api/produtos/:id` | Remover |
+| GET | `/api/pedidos` | Listar pedidos (com nome do cliente) |
+| GET | `/api/pedidos/:id` | Buscar por ID (com itens) |
+| POST | `/api/pedidos` | Criar pedido com itens |
+| PUT | `/api/pedidos/:id` | Atualizar data/cliente |
+| DELETE | `/api/pedidos/:id` | Remover pedido e itens |
 
 ---
 
-## 🧪 Exemplo de Uso (Postman / curl)
+## 🧪 Exemplo rápido (curl)
 
-**1. Registrar usuário**
 ```bash
+# 1. Registrar
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"nome":"Sara","email":"sara@email.com","password":"senha123"}'
-```
 
-**2. Login — copie o `token` e o `id_usuario` da resposta**
-```bash
+# 2. Login — copie token e id_usuario
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"sara@email.com","password":"senha123"}'
-```
 
-**3. Criar categoria (substitua TOKEN e ID pelos valores do login)**
-```bash
+# 3. Criar categoria
 curl -X POST http://localhost:3000/api/categorias \
   -H "Authorization: Bearer TOKEN" \
   -H "x-user-id: ID" \
   -H "Content-Type: application/json" \
   -d '{"nome":"Eletrônicos"}'
-```
 
-**4. Teste de bloqueio (sem autenticação — deve retornar 401)**
-```bash
-curl http://localhost:3000/api/categorias
+# 4. Criar cliente
+curl -X POST http://localhost:3000/api/clientes \
+  -H "Authorization: Bearer TOKEN" -H "x-user-id: ID" \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"João Silva","telefone":"(51)99999-0000","status":"bom"}'
+
+# 5. Criar produto (use o id_categoria do passo 3)
+curl -X POST http://localhost:3000/api/produtos \
+  -H "Authorization: Bearer TOKEN" -H "x-user-id: ID" \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Notebook","valor":3499.90,"estoque":5,"categorias_id_categoria":7}'
+
+# 6. Criar pedido com itens
+curl -X POST http://localhost:3000/api/pedidos \
+  -H "Authorization: Bearer TOKEN" -H "x-user-id: ID" \
+  -H "Content-Type: application/json" \
+  -d '{"data":"2026-06-22","clientes_id_cliente":1,"itens":[{"produtos_id_produto":25,"quantidade":2,"valor":3499.90}]}'
 ```
 
 ---
 
-## 🖥️ Documentação Swagger
+## 🖥️ Swagger
 
-Após iniciar o servidor, acesse:
+Acesse `http://localhost:3000/api-docs` para testar todos os endpoints interativamente.
 
-👉 **http://localhost:3000/api-docs**
-
-Para testar rotas protegidas no Swagger UI:
-1. Faça login em `POST /api/auth/login` e copie o `token` e o `id_usuario`
-2. Clique em **Authorize** (cadeado) e cole o token (sem a palavra "Bearer")
-3. Em cada rota de Categorias, preencha o campo **`x-user-id`** com o `id_usuario`
+No Swagger: clique em **Authorize**, cole o token, e preencha `x-user-id` em cada rota.
 
 ---
 
-## 📁 Estrutura do Projeto (MVC)
+## 📁 Estrutura do Projeto
 
 ```
 api_redesocial_mysql/
 ├── src/
 │   ├── config/
-│   │   └── database.js          # Pool MySQL com mysql2/promise
+│   │   └── database.js              # Pool MySQL com mysql2/promise
 │   ├── models/
-│   │   ├── usuarioModel.js      # Queries SQL para autenticação
-│   │   └── categoriaModel.js    # Queries SQL para categorias (prepared statements)
+│   │   ├── usuarioModel.js          # Queries de autenticação
+│   │   ├── categoriaModel.js        # CRUD categorias
+│   │   ├── clienteModel.js          # CRUD clientes
+│   │   ├── produtoModel.js          # CRUD produtos (JOIN categorias)
+│   │   └── pedidoModel.js           # CRUD pedidos + itens (transação SQL)
 │   ├── controllers/
-│   │   ├── authController.js    # Registro, login, bcrypt
-│   │   └── categoriaController.js # CRUD com validações
+│   │   ├── authController.js
+│   │   ├── categoriaController.js
+│   │   ├── clienteController.js
+│   │   ├── produtoController.js
+│   │   └── pedidoController.js
 │   ├── routes/
-│   │   ├── apiRoutes.js         # GET /api/status (público)
-│   │   ├── authRoutes.js        # POST /api/auth/register e /login
-│   │   └── categoriaRoutes.js   # Rotas protegidas de categorias
-│   ├── middlewares/
-│   │   ├── auth.js              # Validação JWT + x-user-id
-│   │   └── sanitize.js          # Validação com express-validator
-├── database.sql                 # Schema completo do banco loja + tabela usuarios
-├── .env.example                 # Modelo das variáveis de ambiente
-├── .gitignore
+│   │   ├── apiRoutes.js             # GET /api/status (público)
+│   │   ├── authRoutes.js
+│   │   ├── categoriaRoutes.js
+│   │   ├── clientesRoutes.js
+│   │   ├── produtosRoutes.js
+│   │   └── pedidosRoutes.js
+│   └── middlewares/
+│       ├── auth.js                  # JWT + x-user-id
+│       └── sanitize.js              # express-validator
+├── database.sql                     # Schema loja + tabela usuarios
+├── .env.example
 ├── package.json
-├── server.js                    # Ponto de entrada
-├── swagger-output.json          # Documentação OpenAPI 3.0
-└── README.md
+├── server.js
+└── swagger-output.json              # OpenAPI 3.0
 ```
 
 ---
 
-## 🧠 GitFlow Utilizado
+## 🧠 GitFlow
 
-- `main` — versão MongoDB (original)
-- `feature/migracao-mysql` — migração para MySQL (esta versão)
-- Próximas features: `feature/crud-produtos`, `feature/crud-clientes`, etc.
+| Branch | Conteúdo |
+|---|---|
+| `main` | Versão original MongoDB |
+| `feature/migracao-mysql` | Migração base: auth + categorias |
+| `feature/crud-clientes-produtos-pedidos` | CRUD completo: clientes, produtos, pedidos |
 
 ---
 
-## 🔄 Diferenças em relação à versão anterior (MongoDB)
+## 🔄 Diferenças em relação à v1 (MongoDB)
 
 | Aspecto | v1 (MongoDB) | v2 (MySQL) |
 |---|---|---|
-| Banco de dados | MongoDB Atlas (NoSQL) | MySQL 8 (relacional) |
-| Driver | Mongoose (ODM) | mysql2/promise (pool) |
-| Queries | Métodos Mongoose (`.find()`, `.save()`) | SQL com Prepared Statements |
-| Hash de senha | bcrypt via Mongoose middleware | bcrypt no controller |
-| Autenticação | Token JWT | Token JWT + x-user-id obrigatório |
-| Schema | Mongoose Schema | Tabelas SQL (`database.sql`) |
+| Banco | MongoDB Atlas | MySQL 8 |
+| Driver | Mongoose | mysql2/promise |
+| Queries | Mongoose methods | SQL + Prepared Statements |
+| Integridade | Sem FKs | FKs + transações SQL |
+| Autenticação | Token JWT | Token JWT + x-user-id |
 
 ---
 
@@ -271,4 +269,4 @@ api_redesocial_mysql/
 
 **Sara Amabili Castilhos**
 - GitHub: [@SaraCastilhos](https://github.com/SaraCastilhos)
-- Trabalho desenvolvido para a disciplina **Criação de Sites** – 2026
+- Disciplina **Criação de Sites** – 2026
