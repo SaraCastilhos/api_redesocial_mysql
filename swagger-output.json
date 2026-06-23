@@ -2,490 +2,307 @@
   "openapi": "3.0.0",
   "info": {
     "title": "API Rede Social v2 – MySQL",
-    "description": "API REST migrada para banco relacional MySQL. Inclui autenticação JWT, rota pública de status e CRUD protegido de Categorias.",
+    "description": "API REST migrada para banco relacional MySQL. Autenticação JWT, rota pública de status e CRUD protegido de Categorias, Clientes, Produtos e Pedidos.\n\n**Como autenticar nas rotas protegidas:**\n1. Faça login em `POST /api/auth/login` e copie o `token` e o `id_usuario`.\n2. Clique em **Authorize** (cadeado) e cole o token.\n3. Em cada rota, preencha o campo `x-user-id` com o `id_usuario`.",
     "version": "2.0.0",
-    "contact": {
-      "name": "Sara Amabili Castilhos"
-    }
+    "contact": { "name": "Sara Amabili Castilhos" }
   },
-  "servers": [
-    {
-      "url": "http://localhost:3000"
-    }
-  ],
+  "servers": [{ "url": "http://localhost:3000" }],
   "components": {
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Token JWT obtido em /api/auth/login. Cole aqui apenas o token (sem a palavra Bearer)."
+        "description": "Cole aqui apenas o token (sem a palavra Bearer)."
       }
     },
     "schemas": {
       "RegisterBody": {
         "type": "object",
-        "required": [
-          "nome",
-          "email",
-          "password"
-        ],
+        "required": ["nome", "email", "password"],
         "properties": {
-          "nome": {
-            "type": "string",
-            "example": "Sara Castilhos"
-          },
-          "email": {
-            "type": "string",
-            "example": "sara@email.com"
-          },
-          "password": {
-            "type": "string",
-            "example": "senha123"
-          }
+          "nome":     { "type": "string",  "example": "Sara Castilhos" },
+          "email":    { "type": "string",  "example": "sara@email.com" },
+          "password": { "type": "string",  "example": "senha123" }
         }
       },
       "LoginBody": {
         "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
+        "required": ["email", "password"],
         "properties": {
-          "email": {
-            "type": "string",
-            "example": "sara@email.com"
-          },
-          "password": {
-            "type": "string",
-            "example": "senha123"
-          }
+          "email":    { "type": "string", "example": "sara@email.com" },
+          "password": { "type": "string", "example": "senha123" }
         }
       },
       "AuthResponse": {
         "type": "object",
         "properties": {
-          "id_usuario": {
-            "type": "integer",
-            "example": 1
-          },
-          "nome": {
-            "type": "string",
-            "example": "Sara Castilhos"
-          },
-          "email": {
-            "type": "string",
-            "example": "sara@email.com"
-          },
-          "token": {
-            "type": "string",
-            "example": "eyJhbGci..."
-          }
+          "id_usuario": { "type": "integer", "example": 1 },
+          "nome":       { "type": "string",  "example": "Sara Castilhos" },
+          "email":      { "type": "string",  "example": "sara@email.com" },
+          "token":      { "type": "string",  "example": "eyJhbGci..." }
         }
       },
       "CategoriaBody": {
-        "type": "object",
-        "required": [
-          "nome"
-        ],
-        "properties": {
-          "nome": {
-            "type": "string",
-            "example": "Eletrônicos"
-          }
-        }
+        "type": "object", "required": ["nome"],
+        "properties": { "nome": { "type": "string", "example": "Eletrônicos" } }
       },
       "Categoria": {
         "type": "object",
         "properties": {
-          "id_categoria": {
-            "type": "integer",
-            "example": 1
-          },
-          "nome": {
-            "type": "string",
-            "example": "Eletrônicos"
+          "id_categoria": { "type": "integer", "example": 7 },
+          "nome":         { "type": "string",  "example": "Eletrônicos" }
+        }
+      },
+      "ClienteBody": {
+        "type": "object", "required": ["nome", "telefone"],
+        "properties": {
+          "nome":     { "type": "string", "example": "João Silva" },
+          "telefone": { "type": "string", "example": "(51) 99999-0000" },
+          "status":   { "type": "string", "enum": ["bom", "medio", "ruim"], "example": "bom" }
+        }
+      },
+      "Cliente": {
+        "type": "object",
+        "properties": {
+          "id_cliente": { "type": "integer", "example": 5 },
+          "nome":       { "type": "string",  "example": "João Silva" },
+          "telefone":   { "type": "string",  "example": "(51) 99999-0000" },
+          "status":     { "type": "string",  "example": "bom" }
+        }
+      },
+      "ProdutoBody": {
+        "type": "object", "required": ["nome", "valor", "categorias_id_categoria"],
+        "properties": {
+          "nome":                    { "type": "string",  "example": "Notebook Lenovo" },
+          "valor":                   { "type": "number",  "example": 3499.90 },
+          "estoque":                 { "type": "integer", "example": 10 },
+          "categorias_id_categoria": { "type": "integer", "example": 7 }
+        }
+      },
+      "Produto": {
+        "type": "object",
+        "properties": {
+          "id_produto":              { "type": "integer", "example": 25 },
+          "nome":                    { "type": "string",  "example": "Notebook Lenovo" },
+          "valor":                   { "type": "number",  "example": 3499.90 },
+          "estoque":                 { "type": "integer", "example": 10 },
+          "categorias_id_categoria": { "type": "integer", "example": 7 },
+          "categoria_nome":          { "type": "string",  "example": "Eletrônicos" }
+        }
+      },
+      "PedidoBody": {
+        "type": "object", "required": ["data", "clientes_id_cliente", "itens"],
+        "properties": {
+          "data":                 { "type": "string", "format": "date", "example": "2026-06-22" },
+          "clientes_id_cliente":  { "type": "integer", "example": 5 },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["produtos_id_produto", "quantidade", "valor"],
+              "properties": {
+                "produtos_id_produto": { "type": "integer", "example": 25 },
+                "quantidade":          { "type": "number",  "example": 2 },
+                "valor":               { "type": "number",  "example": 3499.90 }
+              }
+            }
+          }
+        }
+      },
+      "Pedido": {
+        "type": "object",
+        "properties": {
+          "id_pedido":            { "type": "integer", "example": 4 },
+          "data":                 { "type": "string",  "example": "2026-06-22" },
+          "clientes_id_cliente":  { "type": "integer", "example": 5 },
+          "cliente_nome":         { "type": "string",  "example": "João Silva" },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "produtos_id_produto": { "type": "integer" },
+                "produto_nome":        { "type": "string" },
+                "quantidade":          { "type": "number" },
+                "valor":               { "type": "number" }
+              }
+            }
           }
         }
       },
       "StatusResponse": {
         "type": "object",
         "properties": {
-          "versao": {
-            "type": "string",
-            "example": "2.0.0"
-          },
-          "status": {
-            "type": "string",
-            "example": "online"
-          },
-          "banco": {
-            "type": "string",
-            "example": "MySQL"
-          },
-          "descricao": {
-            "type": "string",
-            "example": "API Rede Social – migrada para banco relacional"
-          }
+          "versao":    { "type": "string", "example": "2.0.0" },
+          "status":    { "type": "string", "example": "online" },
+          "timestamp": { "type": "string", "example": "2026-06-22T00:00:00.000Z" }
         }
       },
       "ErrorResponse": {
         "type": "object",
-        "properties": {
-          "msg": {
-            "type": "string",
-            "example": "Mensagem de erro"
-          }
-        }
+        "properties": { "msg": { "type": "string", "example": "Mensagem de erro" } }
       }
     }
   },
   "tags": [
-    {
-      "name": "Status",
-      "description": "Rota pública de monitoramento – não requer autenticação"
-    },
-    {
-      "name": "Autenticação",
-      "description": "Registro e login de usuários"
-    },
-    {
-      "name": "Categorias",
-      "description": "CRUD de categorias – requer **dois** controles de acesso:\n\n1. Header `Authorization: Bearer <token>` obtido no login.\n2. Header `x-user-id` com o `id_usuario` retornado no login (deve coincidir com o token).\n\nSem ambos os headers, a requisição é bloqueada com 401 ou 403."
-    }
+    { "name": "Status",       "description": "Rota pública de monitoramento" },
+    { "name": "Autenticação", "description": "Registro e login" },
+    { "name": "Categorias",   "description": "CRUD – requer Bearer token + x-user-id" },
+    { "name": "Clientes",     "description": "CRUD – requer Bearer token + x-user-id" },
+    { "name": "Produtos",     "description": "CRUD – requer Bearer token + x-user-id" },
+    { "name": "Pedidos",      "description": "CRUD – requer Bearer token + x-user-id" }
   ],
   "paths": {
     "/api/status": {
       "get": {
-        "tags": [
-          "Status"
-        ],
-        "summary": "Verificar status e versão da API (público – sem autenticação)",
-        "responses": {
-          "200": {
-            "description": "API online",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StatusResponse"
-                }
-              }
-            }
-          }
-        }
+        "tags": ["Status"],
+        "summary": "Verificar status e versão da API (público)",
+        "responses": { "200": { "description": "API online", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StatusResponse" } } } } }
       }
     },
     "/api/auth/register": {
       "post": {
-        "tags": [
-          "Autenticação"
-        ],
-        "summary": "Registrar novo usuário",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterBody"
-              }
-            }
-          }
-        },
+        "tags": ["Autenticação"], "summary": "Registrar novo usuário",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterBody" } } } },
         "responses": {
-          "201": {
-            "description": "Usuário criado com sucesso – guarde o token e o id_usuario para usar nas rotas de Categorias",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "E-mail já cadastrado ou dados inválidos"
-          }
+          "201": { "description": "Usuário criado – guarde o token e o id_usuario", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "description": "E-mail já cadastrado ou dados inválidos" }
         }
       }
     },
     "/api/auth/login": {
       "post": {
-        "tags": [
-          "Autenticação"
-        ],
-        "summary": "Login – retorna token JWT e id_usuario",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginBody"
-              }
-            }
-          }
-        },
+        "tags": ["Autenticação"], "summary": "Login – retorna token JWT e id_usuario",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginBody" } } } },
         "responses": {
-          "200": {
-            "description": "Login realizado – copie o token para o botão Authorize e o id_usuario para o header x-user-id",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Credenciais inválidas"
-          }
+          "200": { "description": "Login realizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "401": { "description": "Credenciais inválidas" }
         }
       }
     },
     "/api/categorias": {
       "get": {
-        "tags": [
-          "Categorias"
-        ],
-        "summary": "Listar todas as categorias",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-user-id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID do usuário autenticado (id_usuario retornado no login)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista de categorias",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Categoria"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Token ausente ou x-user-id não informado"
-          },
-          "403": {
-            "description": "x-user-id não corresponde ao token"
-          }
-        }
+        "tags": ["Categorias"], "summary": "Listar categorias", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de categorias", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Categoria" } } } } }, "401": { "description": "Não autorizado" } }
       },
       "post": {
-        "tags": [
-          "Categorias"
-        ],
-        "summary": "Criar nova categoria",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-user-id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID do usuário autenticado"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CategoriaBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Categoria criada",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Categoria"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Dados inválidos (nome vazio)"
-          },
-          "401": {
-            "description": "Não autorizado"
-          }
-        }
+        "tags": ["Categorias"], "summary": "Criar categoria", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CategoriaBody" } } } },
+        "responses": { "201": { "description": "Criada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Categoria" } } } }, "401": { "description": "Não autorizado" } }
       }
     },
     "/api/categorias/{id}": {
       "get": {
-        "tags": [
-          "Categorias"
-        ],
-        "summary": "Buscar categoria por ID",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID da categoria"
-          },
-          {
-            "in": "header",
-            "name": "x-user-id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID do usuário autenticado"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Categoria encontrada",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Categoria"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado"
-          },
-          "404": {
-            "description": "Categoria não encontrada"
-          }
-        }
+        "tags": ["Categorias"], "summary": "Buscar categoria por ID", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Categoria encontrada" }, "404": { "description": "Não encontrada" } }
       },
       "put": {
-        "tags": [
-          "Categorias"
-        ],
-        "summary": "Atualizar categoria",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID da categoria"
-          },
-          {
-            "in": "header",
-            "name": "x-user-id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID do usuário autenticado"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CategoriaBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Categoria atualizada",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Categoria"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Não autorizado"
-          },
-          "404": {
-            "description": "Categoria não encontrada"
-          }
-        }
+        "tags": ["Categorias"], "summary": "Atualizar categoria", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CategoriaBody" } } } },
+        "responses": { "200": { "description": "Atualizada" }, "404": { "description": "Não encontrada" } }
       },
       "delete": {
-        "tags": [
-          "Categorias"
-        ],
-        "summary": "Remover categoria",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID da categoria"
-          },
-          {
-            "in": "header",
-            "name": "x-user-id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID do usuário autenticado"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Categoria removida com sucesso"
-          },
-          "401": {
-            "description": "Não autorizado"
-          },
-          "404": {
-            "description": "Categoria não encontrada"
-          }
-        }
+        "tags": ["Categorias"], "summary": "Remover categoria", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Removida" }, "404": { "description": "Não encontrada" } }
+      }
+    },
+    "/api/clientes": {
+      "get": {
+        "tags": ["Clientes"], "summary": "Listar clientes", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de clientes", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Cliente" } } } } } }
+      },
+      "post": {
+        "tags": ["Clientes"], "summary": "Criar cliente", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClienteBody" } } } },
+        "responses": { "201": { "description": "Criado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Cliente" } } } } }
+      }
+    },
+    "/api/clientes/{id}": {
+      "get": {
+        "tags": ["Clientes"], "summary": "Buscar cliente por ID", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Cliente encontrado" }, "404": { "description": "Não encontrado" } }
+      },
+      "put": {
+        "tags": ["Clientes"], "summary": "Atualizar cliente", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClienteBody" } } } },
+        "responses": { "200": { "description": "Atualizado" }, "404": { "description": "Não encontrado" } }
+      },
+      "delete": {
+        "tags": ["Clientes"], "summary": "Remover cliente", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Removido" }, "404": { "description": "Não encontrado" } }
+      }
+    },
+    "/api/produtos": {
+      "get": {
+        "tags": ["Produtos"], "summary": "Listar produtos", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de produtos", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Produto" } } } } } }
+      },
+      "post": {
+        "tags": ["Produtos"], "summary": "Criar produto", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProdutoBody" } } } },
+        "responses": { "201": { "description": "Criado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Produto" } } } } }
+      }
+    },
+    "/api/produtos/{id}": {
+      "get": {
+        "tags": ["Produtos"], "summary": "Buscar produto por ID", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Produto encontrado" }, "404": { "description": "Não encontrado" } }
+      },
+      "put": {
+        "tags": ["Produtos"], "summary": "Atualizar produto", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProdutoBody" } } } },
+        "responses": { "200": { "description": "Atualizado" }, "404": { "description": "Não encontrado" } }
+      },
+      "delete": {
+        "tags": ["Produtos"], "summary": "Remover produto", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Removido" }, "404": { "description": "Não encontrado" } }
+      }
+    },
+    "/api/pedidos": {
+      "get": {
+        "tags": ["Pedidos"], "summary": "Listar pedidos", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Lista de pedidos", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Pedido" } } } } } }
+      },
+      "post": {
+        "tags": ["Pedidos"], "summary": "Criar pedido (com itens)", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PedidoBody" } } } },
+        "responses": { "201": { "description": "Criado com itens", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Pedido" } } } } }
+      }
+    },
+    "/api/pedidos/{id}": {
+      "get": {
+        "tags": ["Pedidos"], "summary": "Buscar pedido por ID (com itens)", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Pedido com itens" }, "404": { "description": "Não encontrado" } }
+      },
+      "put": {
+        "tags": ["Pedidos"], "summary": "Atualizar data/cliente do pedido", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PedidoBody" } } } },
+        "responses": { "200": { "description": "Atualizado" }, "404": { "description": "Não encontrado" } }
+      },
+      "delete": {
+        "tags": ["Pedidos"], "summary": "Remover pedido e seus itens", "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }, { "in": "header", "name": "x-user-id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Removido" }, "404": { "description": "Não encontrado" } }
       }
     }
   }
